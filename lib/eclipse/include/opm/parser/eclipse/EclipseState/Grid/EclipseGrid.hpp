@@ -104,6 +104,8 @@ namespace Opm {
         */
         bool circle( ) const;
         bool isPinchActive( ) const;
+        bool isRadial( ) const;
+        bool isCornerPoint ( ) const;
         double getPinchThresholdThickness( ) const;
         PinchMode::ModeEnum getPinchOption( ) const;
         PinchMode::ModeEnum getMultzOption( ) const;
@@ -187,7 +189,13 @@ namespace Opm {
         PinchMode::ModeEnum m_pinchoutMode;
         PinchMode::ModeEnum m_multzMode;
         mutable std::vector< int > activeMap;
-        bool m_circle = false;
+        unsigned char m_gridtypeflag = 0;
+
+        enum GridTypeFlag : unsigned int {
+            IsCpGrid     = 0u,
+            IsRadialGrid = 1u,
+            IsFullCircle = 2u,
+        };
 
         /*
           The internal class grid_ptr is a a std::unique_ptr with

@@ -184,7 +184,15 @@ namespace Opm {
     }
 
     bool EclipseGrid::circle( ) const{
-        return this->m_circle;
+        return 0 != (this->m_gridtypeflag & (1u << IsFullCircle));
+    }
+
+    bool EclipseGrid::isRadial( ) const{
+        return 0 != (this->m_gridtypeflag & (1u << IsRadialGrid));
+    }
+
+    bool EclipseGrid::isCornerPoint( ) const{
+        return 0 != (this->m_gridtypeflag & (1u << IsCpGrid));
     }
 
     void EclipseGrid::initGrid( const std::array<int, 3>& dims, const Deck& deck) {
@@ -362,8 +370,9 @@ namespace Opm {
             for (auto theta : dthetav)
                 total_angle += theta;
 
-            if (std::abs( total_angle - 360 ) < 0.01)
-                m_circle = deck.hasKeyword<ParserKeywords::CIRCLE>();
+            if ((std::abs( total_angle - 360 ) < 0.01) &&
+                deck.hasKeyword<ParserKeywords::CIRCLE>())
+                this->m_gridtypeflag |= (1u << IsFullCircle);
             else {
                 if (total_angle > 360)
                     throw std::invalid_argument("More than 360 degrees rotation - cells will be double covered");
@@ -413,7 +422,7 @@ namespace Opm {
 
                 for (int j = 0; j <= dims[1]; j++) {
                     /*
-                      The theta value is supposed to go counterclockwise, starting at 'twelve o clock'.
+                      The theta value is supposed to go clockwise, starting at 'twelve o clock'.
                     */
                     double t = M_PI * (90 - tj[j]) / 180;
                     double c = cos( t );
@@ -434,6 +443,8 @@ namespace Opm {
                 }
             }
             initCornerPointGrid( dims , coord, zcorn, nullptr, nullptr);
+            this->m_gridtypeflag |=   1u << IsRadialGrid;
+            this->m_gridtypeflag &= ~(1u << IsCpGrid);
         }
     }
 
@@ -464,6 +475,8 @@ namespace Opm {
 
         if (mapaxes)
             delete[] mapaxes_float;
+
+        this->m_gridtypeflag |= (1u << IsCpGrid);
     }
 
     void EclipseGrid::initCornerPointGrid(const std::array<int,3>& dims, const Deck& deck) {
